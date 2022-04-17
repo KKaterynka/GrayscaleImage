@@ -18,6 +18,7 @@ class GrayscaleImage:
         Sets each pixel to 0
         """
         self._grid = Array2D(nrows, ncols)
+        self.img = 0
         self.clear()
 
     def width(self):
@@ -36,9 +37,9 @@ class GrayscaleImage:
         """
         Configures the img ground
         """
-        for i in range(self._grid.num_rows()):
-            for j in range(self._grid.num_cols()):
-                self.setitem(i, j, value)
+        for row in range(self._grid.num_rows()):
+            for col in range(self._grid.num_cols()):
+                self.setitem(row, col, value)
 
     def setitem(self, row, column, value):
         """
@@ -64,13 +65,13 @@ class GrayscaleImage:
         self.clear()
 
         cipher = self.lzw_compression()
-        c = 0
+        cipher_counter = 0
 
-        for i in range(self.height()):
-            for j in range(self.width()):
+        for row in range(self.height()):
+            for col in range(self.width()):
                 try:
-                    img_gray.setitem(i, j, cipher[c])
-                    c += 1
+                    img_gray.setitem(row, col, cipher[cipher_counter])
+                    cipher_counter += 1
                 except IndexError:
                     continue
 
@@ -82,7 +83,6 @@ class GrayscaleImage:
         for x in range(self.height()):
             for y in range(self.width()):
                 s += str(inttochar(self.img[x, y]))
-
         return LZW_encode(s)
 
     def lzw_decompression(self, cipher):
@@ -96,19 +96,35 @@ class GrayscaleImage:
             reconstruct.append(chartoint(c))
 
         j = np.reshape(reconstruct, (self.height(), self.width()))
-        # print(j)
-        print_pic(self.img)  # ORIGINAL
+
         print_pic(j)  # RECOVERED from comp.
 
 
 if __name__ == "__main__":
+    # create 2DArray image
+    # with width and height 6
     pixels = GrayscaleImage(6, 6)
-    print(pixels.height(), pixels.width())
+    print(f"Height: {pixels.height()}, width: {pixels.width()}")
     pixels.setitem(3, 4, 12)
-    print(pixels.getitem(3, 4))
+    pixels.setitem(0, 0, 17)
+    pixels.setitem(5, 3, 18)
+    pixels.setitem(5, 2, 4)
+    print(f"Extracting specific item: {pixels.getitem(3, 4)}")
+    # manually build array of pixels to decompress(for compression image is needed). Just for trial
+    compressed = []
+    for i in range(len(pixels._grid.rows)):
+        for j in range(len(pixels._grid.rows)):
+            compressed.append(pixels._grid.rows[i][j])
+    pixels.lzw_decompression(compressed)
+    # get the specific pixel
+    print(f"Array for trial to decompress: {compressed}")
 
+    # compress and decompress image(example with jpg format)
     img_gray = GrayscaleImage()
     img_gray.from_file('try.jpg')
-    # print(img_gray.lzw_compression())
-    img_gray.lzw_decompression(img_gray.lzw_compression())
-    print(img_gray.getitem(0, 0))
+    # compress the image
+    compressed = img_gray.lzw_compression()
+    # decompress the image
+    img_gray.lzw_decompression(compressed)
+    # get the specific pixel for image
+    print(f"Extracting specific pixel from image: {img_gray.getitem(0, 0)}")
